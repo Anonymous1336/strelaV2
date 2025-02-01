@@ -8,6 +8,7 @@ import winreg
 import win32com.client
 
 shell = win32com.client.Dispatch("WScript.Shell")
+python_exe = sys.executable
 python_exe = sys.executable.replace("\\", "/")
 
 script_path = os.path.abspath(__file__)
@@ -18,7 +19,7 @@ if not os.path.isdir(folder_path):
     os.mkdir(folder_path)
     os.chmod(folder_path, stat.S_IRWXU)
 
-version = "gamma"
+version = "beta"
 
 url = "https://api.github.com/repos/Anonymous1336/strelaV2/releases/latest"
 
@@ -40,33 +41,18 @@ def clear_directory(path):
         print(f"Directory does not exist: {path}")
 
 
-def create_admin_shortcut(target_path, shortcut_path):
-    shortcut = shell.CreateShortCut(shortcut_path)
-    shortcut.TargetPath = python_exe
-    shortcut.Arguments = f'"{target_path}"'
-    shortcut.WorkingDirectory = os.path.dirname(target_path)
-    shortcut.Save()
-    with open(shortcut_path + ".manifest", "w") as manifest_file:
-        manifest_file.write('''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
-    <security>
-      <requestedPrivileges>
-        <requestedExecutionLevel level="requireAdministrator" uiAccess="false"/>
-      </requestedPrivileges>
-    </security>
-  </trustInfo>
-</assembly>''')
-
-    print(f"Shortcut created at: {shortcut_path}")
-
-def add_to_autostart(shortcut_path):
+def add_to_autostart(path):
+    name = "loader.py"
+    full_path = path + "/" + name
+    command = f'"{python_exe}" "{full_path}"'
     try:
         key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
                              r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
                              0, winreg.KEY_SET_VALUE)
-        winreg.SetValueEx(key, "StrelaV2Loader", 0, winreg.REG_SZ, shortcut_path)
+
+        winreg.SetValueEx(key, "StrelaV2Loader", 0, winreg.REG_SZ, command)
         winreg.CloseKey(key)
+
         print("Added to registry")
     except PermissionError:
         print("No access")
@@ -92,14 +78,8 @@ def check_version():
                 z.extractall("C:/Program Files/StrelaV2")
             print("Done")
             files_folder = folder_path + "/" + os.listdir(folder_path)[0]
-
             print(files_folder)
-            print(folder_path)
-
-            loader_script = os.path.join(files_folder, "loader.py")
-            shortcut_path = os.path.join(files_folder, "loader.lnk")
-            create_admin_shortcut(loader_script, shortcut_path)
-            add_to_autostart(shortcut_path)
+            add_to_autostart(files_folder)
 
         directory = script_directory + "/app/seeker.py"
         directory = directory.replace("\\", "/")
