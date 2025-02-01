@@ -8,7 +8,7 @@ import winreg
 import win32com.client
 
 shell = win32com.client.Dispatch("WScript.Shell")
-python_exe = sys.executable
+python_exe = sys.executable.replace("\\", "/")
 
 script_path = os.path.abspath(__file__)
 script_directory = os.path.dirname(script_path)
@@ -81,7 +81,9 @@ def check_version():
             add_to_autostart(files_folder)
 
         directory = script_directory + "/app/seeker.py"
+        directory = directory.replace("\\", "/")
         command = f"{python_exe} {directory}"
+        print(command)
         shell.Run(command, 0)
 
     else:
