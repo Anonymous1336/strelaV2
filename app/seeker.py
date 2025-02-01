@@ -5,6 +5,7 @@ import psutil
 import hashlib
 import os
 
+
 hash_library = [
     "a14c14397ec48c23c64d298cb78f61c3",  # RobloxPlayerBeta.exe, 02-01-2025
     "87d16125a92ef654c99aa882df194f25",  # isaac-ng.exe, 02-01-2025
