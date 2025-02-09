@@ -5,6 +5,9 @@ import psutil
 import hashlib
 import os
 
+import requests
+
+version = "0.0.1"
 
 hash_library = [
     "a14c14397ec48c23c64d298cb78f61c3",  # RobloxPlayerBeta.exe, 02-01-2025
@@ -40,6 +43,10 @@ if not at_home:
     time.sleep(120)
 
 
+def punish(process_info):
+    process_info.terminate()
+
+
 def check_by_hash(file_hash):
     if file_hash in hash_library:
         return True
@@ -59,14 +66,17 @@ def check_by_path(exe_path):
     return False
 
 
-def send_notif(proc, exe_path, file_hash, method):
-    # в будущем для телеграмуса
-    print(f"Имя: {pc_name}")
-    print(f"PID: {proc.pid}")
-    print(f"Имя: {proc.info['name']}")
-    print(f"Путь: {exe_path}")
-    print(f"MD5-hash: {file_hash}")
-    print(f"Метод: {method}")
+def send_notif(proc, exe_path, file_hash, method, bot_token, chat_id):
+    message = (f"⚠️ Процесс завершен!\n"
+               f"Имя ПК: {pc_name}\n"
+               f"PID: {proc.pid}\n"
+               f"Имя процесса: {proc.info['name']}\n"
+               f"Путь: {exe_path}\n"
+               f"MD5-hash: {file_hash}\n"
+               f"Метод блокировки: {method}")
+
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    requests.post(url, data={"chat_id": chat_id, "text": message})
 
 
 def get_hash(file_path):
@@ -95,8 +105,10 @@ def is_system_process(process):
 
 
 class Checker:
-    def __init__(self):
+    def __init__(self, bot_token, chat_id):
         self.known_pids = set()
+        self.bot_token = bot_token
+        self.chat_id = chat_id
 
     def check(self):
         seen = set()
@@ -116,17 +128,17 @@ class Checker:
                 file_hash = get_hash(exe_path)
 
                 if check_by_hash(file_hash) and not terminated:
-                    proc.terminate()
+                    punish(proc)
                     send_notif(proc, exe_path, file_hash, "ByHash")
                     terminated = True
 
                 if check_by_name(proc) and not terminated:
-                    proc.terminate()
+                    punish(proc)
                     send_notif(proc, exe_path, file_hash, "ByName")
                     terminated = True
 
                 if check_by_path(exe_path) and not terminated:
-                    proc.terminate()
+                    punish(proc)
                     send_notif(proc, exe_path, file_hash, "ByPath")
 
                 if debug_mode:
@@ -148,8 +160,4 @@ class Checker:
         while True:
             self.check()
             await asyncio.sleep(5)
-
-
-checker = Checker()
-asyncio.run(checker.inf_loop())
 
